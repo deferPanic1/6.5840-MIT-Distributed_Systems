@@ -1,23 +1,37 @@
 package mr
 
-//
+import "time"
+
 // RPC definitions.
-//
-// remember to capitalize all names.
-//
 
-//
-// example to show how to declare the arguments
-// and reply for an RPC.
-//
+// TaskState
+const (
+	Waiting = iota
+	InProgress
+	Done
+)
 
-type ExampleArgs struct {
-	X int
+// TaskType
+const (
+	Map = iota
+	Reduce
+	Wait
+)
+
+type GetTaskArgs struct{}
+
+type Task struct {
+	FileName  string
+	TaskType  int
+	NReduce   int
+	Status    int
+	TaskNum   int
+	StartedAt time.Time
 }
 
-type ExampleReply struct {
-	Y int
+type TaskDoneArgs struct {
+	TaskNum  int
+	TaskType int
 }
 
-// Add your RPC definitions here.
-
+type TaskDoneReply struct{}
