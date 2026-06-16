@@ -33,12 +33,13 @@ func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
 	reply := rpc.GetReply{}
 	args := rpc.GetArgs{Key: key}
 
-	ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
-	if !ok {
-		time.Sleep(time.Microsecond)
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
+		if ok {
+			return reply.Value, reply.Version, reply.Err
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
-
-	return reply.Value, reply.Version, reply.Err
 }
 
 // Put updates key with value only if the version in the
@@ -62,10 +63,19 @@ func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
 	reply := rpc.PutReply{}
 	args := rpc.PutArgs{Key: key, Value: value, Version: version}
 
-	ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
-	if !ok {
-		time.Sleep(time.Microsecond)
-	}
+	retried := false
 
-	return reply.Err
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
+		if ok {
+			if reply.Err == rpc.ErrVersion && retried == true {
+				return rpc.ErrMaybe
+			} else {
+				return reply.Err
+			}
+		}
+
+		retried = true
+		time.Sleep(100 * time.Millisecond)
+	}
 }
